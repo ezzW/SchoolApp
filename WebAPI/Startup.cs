@@ -1,8 +1,5 @@
 using Authentication;
 using Infrastructure.EntityFrameWorkCore;
-using Infrastructure.EntityFrameWorkCore.Repositories;
-using Infrastructure.EntityFrameWorkCore.UnitOfWork;
-using Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -17,6 +14,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Repositories.Interfaces;
+using Repositories.Repositories;
+using Repositories.UnitOfWork;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
@@ -39,15 +39,46 @@ namespace WebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
+
             services.Configure<JwtConfig>(Configuration.GetSection("JwtConfig"));
 
-            services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), 
+            services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
                                                       b => b.MigrationsAssembly(typeof(ApplicationContext).Assembly.FullName)));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationContext>();
 
             services.AddControllers();
+            var key = Encoding.ASCII.GetBytes(Configuration["JwtConfig:Key"]);
+            var tokenValidationParams = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateAudience = true,
+                ValidAudience = Configuration["JwtConfig:Audience"],
+                ValidateIssuer = true,
+                ValidIssuer = Configuration["JwtConfig:Issuer"],
+                ValidateLifetime = true,
+                RequireExpirationTime = false,
+                ClockSkew = TimeSpan.Zero
+            };
+            services.AddSingleton(tokenValidationParams);
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(config =>
+            {
+                config.SaveToken = true;
+                config.TokenValidationParameters = tokenValidationParams;
+                config.RequireHttpsMetadata = false;
+            });
+
+
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SchoolApp", Version = "v1" });
@@ -63,53 +94,6 @@ namespace WebAPI
 
                 c.OperationFilter<AuthResponsesOperationFilter>();
             });
-            var key = Encoding.UTF8.GetBytes(Configuration["JwtConfig:Secret"]);
-
-            //var tokenValidationParams = new TokenValidationParameters
-            //{
-            //    ValidateIssuerSigningKey = true,
-            //    IssuerSigningKey = new SymmetricSecurityKey(key),
-            //    ValidateIssuer = false,
-            //    ValidateAudience = false,
-            //    ValidateLifetime = true,
-            //    RequireExpirationTime = false,
-            //    ClockSkew = TimeSpan.Zero
-            //};
-            var tokenValidationParams = new TokenValidationParameters
-                          {
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateAudience = false,
-                ValidAudience = Configuration["JwtConfig:Audience"],
-                ValidateIssuer = false,
-                ValidIssuer = Configuration["JwtConfig:Issuer"],
-                ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
-                };
-            services.AddSingleton(tokenValidationParams);
-
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(config =>
-            {
-                config.RequireHttpsMetadata = false;
-                config.SaveToken = true;
-                config.TokenValidationParameters = tokenValidationParams;
-            });
-            //services.AddAuthentication(options =>
-            //{
-            //    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            //    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            //    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            //})
-            //.AddJwtBearer(jwt =>
-            //{
-            //    jwt.SaveToken = true;
-            //    jwt.TokenValidationParameters = tokenValidationParams;
-            //});
-
-
 
             services.AddAutoMapper(typeof(Startup));
             #region Repositories
@@ -123,9 +107,10 @@ namespace WebAPI
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SchoolApp v1"));
+            app.UseCors(x => x
+                       .AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader());
 
             if (env.IsDevelopment())
             {
@@ -136,6 +121,7 @@ namespace WebAPI
 
             app.UseRouting();
 
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -143,6 +129,10 @@ namespace WebAPI
             {
                 endpoints.MapControllers();
             });
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SchoolApp v1"));
+
         }
     }
 

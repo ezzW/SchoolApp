@@ -1,13 +1,14 @@
 ﻿using Authentication;
 using AutoMapper;
 using DomainModels;
-using Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -22,6 +23,7 @@ using WebAPI.Models;
 
 namespace WebAPI.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase
@@ -53,7 +55,6 @@ namespace WebAPI.Controllers
             if (ModelState.IsValid)
             {
                 var existingUser = await userManager.FindByNameAsync(model.Username);
-
                 if (existingUser == null)
                 {
                     return BadRequest(new RegistrationResponse()
@@ -97,7 +98,6 @@ namespace WebAPI.Controllers
         {
             if (ModelState.IsValid)
             {
-                // We can utilise the model
                 var existingUser = await userManager.FindByEmailAsync(model.Email);
 
                 if (existingUser != null)
@@ -115,7 +115,7 @@ namespace WebAPI.Controllers
                 var isCreated = await userManager.CreateAsync(newUser, model.Password);
                 if (isCreated.Succeeded)
                 {
-                    var accessToken =  GenerateAccessToken(existingUser);
+                    var accessToken =  GenerateAccessToken(newUser);
                     return Ok(accessToken);
                 }
                 else
@@ -138,12 +138,11 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost]
-        [Route("register-admin")]
-        public async Task<IActionResult> RegisterAdmin([FromBody] RegisterModel model)
+        [Route("RegisterWithRole")]
+        public async Task<IActionResult> RegisterWithRole([FromBody] RegisterModel model)
         {
             if (ModelState.IsValid)
             {
-                // We can utilise the model
                 var existingUser = await userManager.FindByEmailAsync(model.Email);
 
                 if (existingUser != null)
@@ -161,17 +160,16 @@ namespace WebAPI.Controllers
                 var isCreated = await userManager.CreateAsync(newUser, model.Password);
                 if (isCreated.Succeeded)
                 {
-                    if (!await roleManager.RoleExistsAsync(UserRoles.Admin))
-                        await roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
-                    if (!await roleManager.RoleExistsAsync(UserRoles.User))
-                        await roleManager.CreateAsync(new IdentityRole(UserRoles.User));
-
-                    if (await roleManager.RoleExistsAsync(UserRoles.Admin))
+                    if (!string.IsNullOrWhiteSpace(model.userRole.ToString()))
                     {
-                        await userManager.AddToRoleAsync(newUser, UserRoles.Admin);
+                        if (!await roleManager.RoleExistsAsync(model.userRole.ToString()))
+                            await roleManager.CreateAsync(new IdentityRole(model.userRole.ToString()));
+                        if (await roleManager.RoleExistsAsync(model.userRole.ToString()))
+                        {
+                            await userManager.AddToRoleAsync(newUser, model.userRole.ToString());
+                        }
                     }
-
-                    var accessToken =  GenerateAccessToken(existingUser);
+                    var accessToken =  GenerateAccessToken(newUser);
                     return Ok(accessToken);
                 }
                 else
@@ -251,7 +249,7 @@ namespace WebAPI.Controllers
                 Success = false
             });
         }
-
+        [NonAction]
         public string GenerateRefreshToken()
         {
             var randomNumber = new byte[16];
@@ -261,7 +259,7 @@ namespace WebAPI.Controllers
                 return Convert.ToBase64String(randomNumber);
             }
         }
-
+        [NonAction]
         public AuthResult GenerateAccessToken(ApplicationUser user)
         {
             string key = _configuration["JwtConfig:Key"];
@@ -269,24 +267,29 @@ namespace WebAPI.Controllers
             string audience = _configuration["JwtConfig:Audience"];
             string issuer= _configuration["JwtConfig:Issuer"];
 
-            var utcNow = DateTime.UtcNow;
+            var timeNow = DateTime.Now;
             var claimsValues = new Dictionary<string, string>();
             claimsValues[JwtRegisteredClaimNames.Sub] = user.Id;
             claimsValues[JwtRegisteredClaimNames.UniqueName] = user.UserName;
             claimsValues[JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString();
-            claimsValues[JwtRegisteredClaimNames.Iat] = utcNow.ToString();
+            claimsValues[JwtRegisteredClaimNames.Iat] = timeNow.ToString();
 
             var claimsList = new List<Claim>();
             foreach (KeyValuePair<string, string> i in claimsValues)
                 claimsList.Add(new Claim(i.Key, i.Value));
+            var CurentUserRoles = userManager.GetRolesAsync(user).Result;
+            foreach (var item in CurentUserRoles)
+            {
+                claimsList.Add(new Claim(ClaimTypes.Role, item));
+            }
             var claims = claimsList.ToArray();
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key));
             var signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
             var jwt = new JwtSecurityToken(
                 signingCredentials: signingCredentials,
                 claims: claims,
-                notBefore: utcNow,
-                expires: utcNow.AddMinutes(lifeTimeMinutes),
+                notBefore: timeNow,
+                expires: timeNow.AddMinutes(lifeTimeMinutes),
                 audience: audience,
                 issuer: issuer
                 );
@@ -296,6 +299,8 @@ namespace WebAPI.Controllers
                 Token = GenerateRefreshToken(),
                 AddedDate = DateTime.Now,
             };
+            _unitOfWork.RefreshTokens.Add(refToken);
+            _unitOfWork.Complete();
 
             return new  AuthResult
             {
@@ -304,6 +309,7 @@ namespace WebAPI.Controllers
                 Success = true
             };
         }
+        [NonAction]
         public ClaimsPrincipal GetExpiredToken(string token, string key)
         {
             try

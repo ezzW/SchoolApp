@@ -15,6 +15,9 @@ namespace WebAPI.Mapping
             CreateMap<RefreshToken, RefreshTokenModel>();
             CreateMap<RefreshTokenModel,RefreshToken>();
 
+            CreateMap<Student, StudentModel>();
+            CreateMap<StudentModel, Student>();
+
         }
     }
 

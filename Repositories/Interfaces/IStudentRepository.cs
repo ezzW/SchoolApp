@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Interfaces
+namespace Repositories.Interfaces
 {
-    public interface IRefreshTokenRepository : IGenericRepository<RefreshToken>
+    public interface IStudentRepository : IGenericRepository<Student>
     {
     }
 }

@@ -2,6 +2,6 @@ namespace WebAPI.Configuration
 {
     public class JwtConfig
     {
-        public string Secret { get; set; }
+        public string Key { get; set; }
     }
 }

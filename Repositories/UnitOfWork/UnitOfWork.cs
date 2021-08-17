@@ -1,10 +1,11 @@
-﻿using Infrastructure.EntityFrameWorkCore.Repositories;
-using Interfaces;
+﻿using Infrastructure.EntityFrameWorkCore;
+using Repositories.Interfaces;
+using Repositories.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Infrastructure.EntityFrameWorkCore.UnitOfWork
+namespace Repositories.UnitOfWork
 {
     public class UnitOfWork : IUnitOfWork
     {

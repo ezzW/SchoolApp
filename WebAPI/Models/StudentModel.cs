@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace DomainModels
+namespace WebAPI.Models
 {
-    public class Student
+    public class StudentModel
     {
-        public int StudentId { get; set; }
+        [Required]
         public string Name { get; set; }
+        [Required]
         public int Age { get; set; }
         public bool Accepted { get; set; }
         public bool IsActive { get; set; }

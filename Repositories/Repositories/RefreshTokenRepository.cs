@@ -1,10 +1,11 @@
 ﻿using DomainModels;
-using Interfaces;
+using Infrastructure.EntityFrameWorkCore;
+using Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Infrastructure.EntityFrameWorkCore.Repositories
+namespace Repositories.Repositories
 {
     public class RefreshTokenRepository : GenericRepository<RefreshToken>, IRefreshTokenRepository
     {

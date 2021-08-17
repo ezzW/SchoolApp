@@ -4,14 +4,16 @@ using Infrastructure.EntityFrameWorkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure.EntityFrameWorkCore.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20210809031258_AddAcceptedPropToStudent")]
+    partial class AddAcceptedPropToStudent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,6 +84,50 @@ namespace Infrastructure.EntityFrameWorkCore.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "eba09a81-6321-4325-89fd-d6cad832628d",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "c4457554-f160-4e16-ba28-9fd3dfea439f",
+                            Email = "admin@examble.com",
+                            EmailConfirmed = false,
+                            LockoutEnabled = false,
+                            PhoneNumber = "01067628592",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "7c2d179e-64e6-43b3-aa29-fd46db1082a5",
+                            TwoFactorEnabled = false,
+                            UserName = "Admin"
+                        },
+                        new
+                        {
+                            Id = "8466451b-aa51-4153-bbac-cbfd4b9eec6d",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "59bb716e-46aa-4fa5-8f9f-994ba143aac5",
+                            Email = "Staff@examble.com",
+                            EmailConfirmed = false,
+                            LockoutEnabled = false,
+                            PhoneNumber = "01067628592",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "23e533ac-2f14-450e-b49f-dd7233b8cf52",
+                            TwoFactorEnabled = false,
+                            UserName = "Staff"
+                        },
+                        new
+                        {
+                            Id = "70fb4531-df23-418b-87f7-aa078ab57112",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "028b4385-1b4a-4fee-a879-28b945e40ee2",
+                            Email = "HrUser@examble.com",
+                            EmailConfirmed = false,
+                            LockoutEnabled = false,
+                            PhoneNumber = "01067628592",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "29a22d79-9f53-455f-8aa9-f0a5333a529f",
+                            TwoFactorEnabled = false,
+                            UserName = "HrUSer"
+                        });
                 });
 
             modelBuilder.Entity("DomainModels.RefreshToken", b =>
@@ -171,6 +217,29 @@ namespace Infrastructure.EntityFrameWorkCore.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "5c83782f-9674-4320-b276-565d3655fd2a",
+                            ConcurrencyStamp = "1",
+                            Name = "Admin",
+                            NormalizedName = "Admin"
+                        },
+                        new
+                        {
+                            Id = "e965de28-b9b0-44b4-8be2-3912ec8ee3aa",
+                            ConcurrencyStamp = "2",
+                            Name = "HR",
+                            NormalizedName = "Human Resource"
+                        },
+                        new
+                        {
+                            Id = "39cd4696-21cf-4ead-b280-4ba8484bf3f9",
+                            ConcurrencyStamp = "3",
+                            Name = "Staff",
+                            NormalizedName = "Staff"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -256,6 +325,23 @@ namespace Infrastructure.EntityFrameWorkCore.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "eba09a81-6321-4325-89fd-d6cad832628d",
+                            RoleId = "5c83782f-9674-4320-b276-565d3655fd2a"
+                        },
+                        new
+                        {
+                            UserId = "70fb4531-df23-418b-87f7-aa078ab57112",
+                            RoleId = "e965de28-b9b0-44b4-8be2-3912ec8ee3aa"
+                        },
+                        new
+                        {
+                            UserId = "8466451b-aa51-4153-bbac-cbfd4b9eec6d",
+                            RoleId = "39cd4696-21cf-4ead-b280-4ba8484bf3f9"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>

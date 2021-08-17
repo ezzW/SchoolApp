@@ -22,7 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Authentication\Authentication.csproj" />
     <ProjectReference Include="..\DomainModels\DomainModels.csproj" />
-    <ProjectReference Include="..\Repository\Interfaces.csproj" />
   </ItemGroup>
 
 </Project>
